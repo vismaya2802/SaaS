@@ -12,7 +12,8 @@ env/
 .idea/
 .DS_Store
 Thumbs.db
-data/lenskart.db
+data/visionframe.db
 node_modules/
 dist/
 *.log
+

@@ -33,8 +33,12 @@ def list_products(
     query = db.query(Product)
 
     if category:
+        # Capitalize category for database query (eyeglasses → Eyeglasses)
+        category = category.capitalize() if category else category
         query = query.filter(Product.category == category)
     if shape:
+        # Capitalize shape for database query (round → Round)
+        shape = shape.capitalize() if shape else shape
         query = query.filter(Product.frame_shape == shape)
     if collection_type:
         query = query.filter(Product.collection_tag == collection_type)
@@ -61,3 +65,5 @@ def get_product(product_id: str, db: Session = Depends(get_db)):
             detail=f"Product '{product_id}' not found.",
         )
     return ProductOut.model_validate(product)
+
+

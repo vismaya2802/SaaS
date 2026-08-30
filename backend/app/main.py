@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
 
 # ─── App factory ─────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="Lenskart SaaS v3.0",
+    title="VisionFrame v3.0",
     description=(
         "College Project — Zero-Defect, $0.00 Deployment.\n\n"
         "Backend: FastAPI + SQLAlchemy + SQLite + WebSockets.\n"
@@ -61,4 +61,5 @@ app.include_router(telemetry.router)
 # ─── Health check ─────────────────────────────────────────────────────────────
 @app.get("/health", tags=["Health"])
 async def health():
-    return {"status": "ok", "service": "lenskart-saas-backend", "version": "3.0.0"}
+    return {"status": "ok", "service": "visionframe-backend", "version": "3.0.0"}
+

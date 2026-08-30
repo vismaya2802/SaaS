@@ -21,7 +21,7 @@ from app.schemas import OTPRequest, OTPResponse, OTPVerifyRequest, TokenResponse
 router = APIRouter()
 
 # ─── JWT config (use env var in production) ────────────────────────────────────
-SECRET_KEY = "LENSKART_DEV_SECRET_CHANGE_IN_PROD"
+SECRET_KEY = "VISIONFRAME_DEV_SECRET_CHANGE_IN_PROD"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 h
 
@@ -86,3 +86,4 @@ def verify_otp(body: OTPVerifyRequest, db: Session = Depends(get_db)):
 
     token = _create_access_token(user.id, user.identifier)
     return TokenResponse(access_token=token, user_id=user.id)
+

@@ -9,7 +9,7 @@ const api = axios.create({
 
 // ── Request interceptor: attach JWT ──────────────────────────────
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('lk_token')
+  const token = localStorage.getItem('vf_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -21,8 +21,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('lk_token')
-      localStorage.removeItem('lk_user')
+      localStorage.removeItem('vf_token')
+      localStorage.removeItem('vf_user')
       // Optionally trigger OTP modal — handled in AuthContext
     }
     return Promise.reject(error)
@@ -30,3 +30,4 @@ api.interceptors.response.use(
 )
 
 export default api
+

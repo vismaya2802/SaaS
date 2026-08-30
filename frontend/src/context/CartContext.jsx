@@ -68,7 +68,8 @@ export const useCartStore = create(
       clearCart: () => set({ items: [] }),
     }),
     {
-      name: 'lenskart-cart', // localStorage key
+      name: 'visionframe-cart', // localStorage key
     }
   )
 )
+

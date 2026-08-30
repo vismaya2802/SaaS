@@ -1,5 +1,5 @@
 {
-  "name": "lenskart-saas-frontend",
+  "name": "visionframe-frontend",
   "private": true,
   "version": "3.0.0",
   "type": "module",
@@ -28,3 +28,4 @@
     "vite": "^5.3.3"
   }
 }
+

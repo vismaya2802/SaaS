@@ -25,7 +25,7 @@ function ProductCard({ product }) {
         <img
           src={imageUrl}
           alt={product.title}
-          className="w-full h-full object-cover opacity-20"
+          className="w-full h-full object-contain"
           crossOrigin="anonymous"
           onError={(e) => {
             console.warn(`Failed to load image for ${product.title}, using fallback`);
@@ -37,7 +37,7 @@ function ProductCard({ product }) {
             {product.collection_tag.replace("_", " ")}
           </span>
         )}
-        <span className="absolute text-5xl z-10 opacity-80">🕶️</span>
+        
       </div>
 
       <h3 className="font-semibold text-white text-sm mb-1 truncate">{product.title}</h3>
@@ -113,3 +113,4 @@ export default function ProductGrid() {
     </div>
   );
 }
+

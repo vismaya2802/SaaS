@@ -19,10 +19,10 @@ export default function Navbar() {
           {/* ── Logo ── */}
           <Link to="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white font-bold text-sm">
-              LK
+              VF
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-brand-400 to-accent-400 bg-clip-text text-transparent">
-              Lenskart
+              VisionFrame
             </span>
             <span className="text-xs text-gray-400 font-medium mt-1">v3.0</span>
           </Link>
@@ -91,3 +91,5 @@ export default function Navbar() {
     </>
   )
 }
+
+

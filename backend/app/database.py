@@ -7,8 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 # ─── SQLite database URL ──────────────────────────────────────────────────────
-# File is stored at backend/data/lenskart.db (relative to CWD of uvicorn)
-SQLALCHEMY_DATABASE_URL = "sqlite:///./data/lenskart.db"
+# File is stored at backend/data/visionframe.db (relative to CWD of uvicorn)
+SQLALCHEMY_DATABASE_URL = "sqlite:///./data/visionframe.db"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -32,3 +32,4 @@ def get_db():
         yield db
     finally:
         db.close()
+

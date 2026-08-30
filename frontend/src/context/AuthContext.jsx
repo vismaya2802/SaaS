@@ -7,7 +7,7 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     // Hydrate from localStorage on boot
-    const stored = localStorage.getItem('lk_user')
+    const stored = localStorage.getItem('vf_user')
     return stored ? JSON.parse(stored) : null
   })
   const [showOTPModal, setShowOTPModal] = useState(false)
@@ -37,8 +37,8 @@ export function AuthProvider({ children }) {
       const { data } = await api.post('/auth/verify', { identifier, otp })
       // data: { access_token, token_type, user_id }
       const userData = { token: data.access_token, userId: data.user_id, identifier }
-      localStorage.setItem('lk_user', JSON.stringify(userData))
-      localStorage.setItem('lk_token', data.access_token)
+      localStorage.setItem('vf_user', JSON.stringify(userData))
+      localStorage.setItem('vf_token', data.access_token)
       setUser(userData)
       setShowOTPModal(false)
       return userData
@@ -52,8 +52,8 @@ export function AuthProvider({ children }) {
 
   // ── Logout ───────────────────────────────────────────────────────
   const logout = useCallback(() => {
-    localStorage.removeItem('lk_user')
-    localStorage.removeItem('lk_token')
+    localStorage.removeItem('vf_user')
+    localStorage.removeItem('vf_token')
     setUser(null)
   }, [])
 
@@ -78,3 +78,4 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used within <AuthProvider>')
   return ctx
 }
+
