@@ -1,4 +1,4 @@
-// hooks/useMediaPipe.js — Updated with actual glasses image loading
+// hooks/useMediaPipe.js — Updated to use CDN-loaded MediaPipe
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 export function useMediaPipe(options = {}) {
@@ -14,6 +14,18 @@ export function useMediaPipe(options = {}) {
   const [scale, setScale] = useState(1.0);
   const scaleRef = useRef(1.0);
 
+  // Wait for MediaPipe to load from CDN
+  useEffect(() => {
+    const checkMediaPipeLoaded = () => {
+      if (window.FaceMesh && window.Camera) {
+        setIsReady(true);
+      } else {
+        setTimeout(checkMediaPipeLoaded, 100);
+      }
+    };
+    checkMediaPipeLoaded();
+  }, []);
+
   // Load glasses image from options.arAssetUrl
   useEffect(() => {
     if (options.arAssetUrl) {
@@ -26,7 +38,6 @@ export function useMediaPipe(options = {}) {
       };
       img.onerror = () => {
         console.warn('⚠️ Failed to load glasses image, using fallback');
-        // Fallback to generic glasses icon
         frameImageRef.current = null;
       };
     }
@@ -88,17 +99,21 @@ export function useMediaPipe(options = {}) {
 
   const startAR = useCallback(async () => {
     setError(null);
-    try {
-      const { FaceMesh } = await import('mediapipe/face_mesh');
-      const { Camera } = await import('mediapipe/camera_utils');
+    
+    // Check if MediaPipe is loaded from CDN
+    if (!window.FaceMesh || !window.Camera) {
+      setError('MediaPipe libraries are loading. Please wait a moment and try again.');
+      return;
+    }
 
+    try {
       if (!videoRef.current || !canvasRef.current) {
         throw new Error('Video or Canvas element not found');
       }
 
-      faceMeshRef.current = new FaceMesh({
+      faceMeshRef.current = new window.FaceMesh({
         locateFile: (file) =>
-          `https://cdn.jsdelivr.net/npm/mediapipe/face_mesh/${file}`,
+          `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`,
       });
 
       faceMeshRef.current.setOptions({
@@ -110,7 +125,7 @@ export function useMediaPipe(options = {}) {
 
       faceMeshRef.current.onResults(onResults);
 
-      cameraRef.current = new Camera(videoRef.current, {
+      cameraRef.current = new window.Camera(videoRef.current, {
         onFrame: async () => {
           if (faceMeshRef.current && videoRef.current) {
             await faceMeshRef.current.send({ image: videoRef.current });
@@ -124,7 +139,7 @@ export function useMediaPipe(options = {}) {
       setIsTracking(true);
     } catch (err) {
       console.error('Failed to start AR:', err);
-      setError(err.message || 'Unable to access webcam');
+      setError(err.message || 'Unable to access webcam or start AR');
       setIsTracking(false);
     }
   }, [onResults]);
@@ -140,7 +155,6 @@ export function useMediaPipe(options = {}) {
   }, []);
 
   useEffect(() => {
-    setIsReady(true);
     return () => stopAR();
   }, [stopAR]);
 
