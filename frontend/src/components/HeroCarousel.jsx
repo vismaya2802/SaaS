@@ -6,7 +6,7 @@ const SLIDES = [
   {
     id: 1,
     title: 'Luxury Eyewear Redefined',
-    subtitle: 'Experience premium craftsmanship with AI-powered virtual try-on',
+    subtitle: 'Experience premium craftsmanship with advanced virtual try-on technology',
     cta: 'Explore Collection',
     gradient: 'from-charcoal-950 via-luxury-900 to-gold-900',
     query: '?collection_type=trending',

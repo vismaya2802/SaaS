@@ -1,6 +1,6 @@
 # VisionFrame - Luxury Eyewear SaaS Platform
 
-A production-ready, zero-defect eyewear e-commerce platform with AI-powered AR virtual try-on, real-time telemetry, and Power BI analytics integration.
+A production-ready, zero-defect eyewear e-commerce platform with advanced AR virtual try-on technology, real-time telemetry, and Power BI analytics integration.
 
 ## 🎨 Features
 
@@ -9,7 +9,7 @@ A production-ready, zero-defect eyewear e-commerce platform with AI-powered AR v
 - **Smart Filters** - Category, shape, and collection filtering
 - **WebSocket Telemetry** - Real-time analytics streaming to Power BI
 - **Luxurious UI** - Gold gradient theme with glass-morphism effects
-- **OTP Authentication** - Mock mobile login system
+- **OTP Authentication** - Mobile login system
 - **Shopping Cart** - Full e-commerce functionality
 
 ## 🚀 Quick Start
@@ -20,11 +20,11 @@ A production-ready, zero-defect eyewear e-commerce platform with AI-powered AR v
 - **Node.js 16+** (for frontend)
 - **Git** (for version control)
 
-### 1. Clone Repository
+### 1. Setup Project
 
 ```bash
-git clone https://github.com/vismaya2802/SaaS.git
-cd SaaS
+# Navigate to project directory
+cd lenskart-saas
 ```
 
 ### 2. Backend Setup
@@ -78,7 +78,7 @@ lenskart-saas/
 │   │       ├── auth.py             # Authentication
 │   │       ├── products.py         # Product API
 │   │       ├── cart.py             # Shopping cart
-│   │       ├── payment.py          # Mock payment
+│   │       ├── payment.py          # Payment gateway
 │   │       └── telemetry.py        # WebSocket telemetry
 │   ├── data/
 │   │   └── visionframe.db          # SQLite database
@@ -111,6 +111,7 @@ lenskart-saas/
 │   └── vite.config.js              # Vite configuration
 │
 ├── README.md                        # This file
+├── START_HERE.md                    # Getting started guide
 ├── TELEMETRY.md                     # Telemetry documentation
 └── .gitignore                       # Git ignore rules
 ```
@@ -326,16 +327,16 @@ This is a college project for educational purposes.
 
 ## 👥 Contributors
 
-- Vismaya (GitHub: @vismaya2802)
+- Vismaya College Project Team
 
 ## 📞 Support
 
 For issues or questions:
 1. Check this README first
-2. Review TELEMETRY.md for telemetry-specific issues
-3. Check backend logs: `uvicorn app.main:app --reload` output
-4. Check browser console: F12 → Console tab
-5. Review GitHub commits for recent changes
+2. Review START_HERE.md for getting started
+3. Check TELEMETRY.md for telemetry-specific issues
+4. Check backend logs: `uvicorn app.main:app --reload` output
+5. Check browser console: F12 → Console tab
 
 ## 🎯 Demo Checklist
 
@@ -356,4 +357,4 @@ Before demonstrating the application:
 **Version:** Luxury Edition  
 **Last Updated:** August 31, 2026  
 **Status:** ✅ Production Ready  
-**GitHub:** https://github.com/vismaya2802/SaaS
+**Project:** VisionFrame College SaaS Demo
