@@ -77,6 +77,36 @@
     background: rgba(234, 179, 8, 0.1);
   }
 
+  /* Input field with luxury styling and visible text */
+  .input-field {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #ffffff;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(202, 138, 4, 0.3);
+    transition: all 0.2s ease;
+    outline: none;
+  }
+
+  .input-field::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
+  }
+
+  .input-field:focus {
+    border-color: #eab308;
+    background: rgba(15, 23, 42, 0.8);
+    box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.1);
+  }
+
+  .input-field:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   /* Product card with luxury hover */
   .product-card {
     background: rgba(255, 255, 255, 0.05);
