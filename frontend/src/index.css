@@ -13,44 +13,89 @@
   }
 
   body {
-    @apply bg-charcoal-950 text-gray-100 font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
     background: linear-gradient(135deg, #020617 0%, #0f172a 25%, #1e293b 50%, #581c87 100%);
     min-height: 100vh;
     background-attachment: fixed;
+    color: #f3f4f6;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
 @layer components {
-  /* ── Glassmorphism card with luxury styling ─────────────────────── */
+  /* Glassmorphism card with luxury styling */
   .glass-card {
-    @apply bg-white/5 backdrop-blur-md border border-gold-500/20 rounded-2xl;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(202, 138, 4, 0.2);
+    border-radius: 1rem;
     box-shadow: 0 8px 32px 0 rgba(202, 138, 4, 0.1);
   }
 
-  /* ── Primary luxury gradient button ──────────────────────────────── */
+  /* Primary luxury gradient button */
   .btn-primary {
-    @apply px-6 py-3 rounded-xl font-semibold text-charcoal-950 transition-all duration-300
-           bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600
-           hover:from-gold-500 hover:via-gold-600 hover:to-gold-700
-           hover:shadow-lg hover:shadow-gold-500/50
-           active:scale-95 cursor-pointer;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    color: #0f172a;
+    background: linear-gradient(to right, #facc15, #eab308, #ca8a04);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 4px 14px 0 rgba(234, 179, 8, 0.3);
   }
 
-  /* ── Ghost button with luxury accent ───────────────────────────────── */
+  .btn-primary:hover {
+    background: linear-gradient(to right, #eab308, #ca8a04, #a16207);
+    box-shadow: 0 6px 20px 0 rgba(202, 138, 4, 0.5);
+    transform: translateY(-2px);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.95);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Ghost button with luxury accent */
   .btn-ghost {
-    @apply px-6 py-3 rounded-xl font-medium text-gold-400 border border-gold-500/30 
-           hover:border-gold-500 hover:text-gold-300 hover:bg-gold-500/10
-           transition-all duration-200 cursor-pointer;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    color: #facc15;
+    border: 1px solid rgba(234, 179, 8, 0.3);
+    background: transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
   }
 
-  /* ── Product card with luxury hover ───────────────────────────────── */
+  .btn-ghost:hover {
+    border-color: #eab308;
+    color: #fde047;
+    background: rgba(234, 179, 8, 0.1);
+  }
+
+  /* Product card with luxury hover */
   .product-card {
-    @apply glass-card p-4 cursor-pointer 
-           hover:border-gold-500/60 hover:scale-[1.02] 
-           transition-all duration-300 hover:shadow-xl hover:shadow-gold-500/30;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(202, 138, 4, 0.2);
+    border-radius: 1rem;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px 0 rgba(202, 138, 4, 0.1);
   }
 
-  /* ── Page transitions ───────────────────────────────────────────────── */
+  .product-card:hover {
+    border-color: rgba(234, 179, 8, 0.6);
+    transform: scale(1.02);
+    box-shadow: 0 12px 40px 0 rgba(234, 179, 8, 0.3);
+  }
+
+  /* Page transitions */
   .page-enter {
     animation: fadeIn 0.5s ease-in;
   }
