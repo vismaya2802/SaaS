@@ -5,9 +5,7 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
   const [ws, setWs] = useState(null);
   const [dwellTime, setDwellTime] = useState(0);
   const dwellTimerRef = useRef(null);
-  const canvasResizeRef = useRef(null);
 
-  // 1. Initialize the MediaPipe Hook
   const {
     videoRef,
     canvasRef,
@@ -24,7 +22,6 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
     onTelemetry: (data) => sendTelemetry(data)
   });
 
-  // ✅ FIX: Set canvas dimensions when video loads
   useEffect(() => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
@@ -34,31 +31,23 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
         if (video.videoWidth && video.videoHeight) {
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
-          console.log(`✅ Canvas sized to ${canvas.width}x${canvas.height}`);
         }
       };
       
       video.addEventListener('loadedmetadata', setCanvasSize);
-      
-      return () => {
-        video.removeEventListener('loadedmetadata', setCanvasSize);
-      };
+      return () => video.removeEventListener('loadedmetadata', setCanvasSize);
     }
   }, [videoRef, canvasRef, isTracking]);
 
-  // 2. WebSocket Connection Setup
   useEffect(() => {
     if (isTracking && !ws) {
       const effectiveUserId = userId || 'USER_ANON';
       const socketUrl = `ws://localhost:8000/api/telemetry/ws/${effectiveUserId}`;
       const socket = new WebSocket(socketUrl);
 
-      socket.onopen = () => console.log('✅ WebSocket connected to local telemetry engine');
-      socket.onclose = () => {
-        console.log('ℹ️ WebSocket disconnected');
-        setWs(null);
-      };
-      socket.onerror = (err) => console.error('⚠️ WebSocket Error:', err);
+      socket.onopen = () => console.log('✅ WebSocket connected');
+      socket.onclose = () => setWs(null);
+      socket.onerror = (err) => console.error('WebSocket Error:', err);
 
       setWs(socket);
     } else if (!isTracking && ws) {
@@ -67,7 +56,6 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
     }
   }, [isTracking, userId]);
 
-  // 3. Dwell Time Tracker
   useEffect(() => {
     if (isTracking) {
       dwellTimerRef.current = setInterval(() => {
@@ -80,7 +68,6 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
     return () => clearInterval(dwellTimerRef.current);
   }, [isTracking]);
 
-  // 4. Telemetry Emitter
   const sendTelemetry = (eventData) => {
     if (ws?.readyState === WebSocket.OPEN) {
       const payload = {
@@ -90,11 +77,9 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
         timestamp: new Date().toISOString()
       };
       ws.send(JSON.stringify(payload));
-      console.log('📡 Telemetry sent:', payload);
     }
   };
 
-  // 5. UI Handlers
   const handleStart = () => {
     startAR();
     sendTelemetry({ event_type: 'TRY_ON_START', dwell_time_seconds: 0 });
@@ -106,13 +91,15 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
   };
 
   return (
-    <div className="flex flex-col items-center p-4 bg-gray-900 text-white rounded-lg shadow-xl max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-2 text-[#000042] bg-white px-4 py-1 rounded">
-        AR Try-On: {productName || 'Eyewear Frame'}
-      </h2>
+    <div className="flex flex-col items-center glass-card p-6 shadow-xl shadow-gold-500/10">
+      <div className="w-full mb-4">
+        <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-600 text-center">
+          AR Virtual Try-On
+        </h2>
+        <p className="text-sm text-gray-400 text-center mt-1">{productName}</p>
+      </div>
       
-      {/* Video & Canvas Container */}
-      <div className="relative w-full max-w-md aspect-[4/3] bg-black rounded-lg overflow-hidden border-2 border-[#000042]">
+      <div className="relative w-full max-w-md aspect-[4/3] bg-charcoal-950 rounded-xl overflow-hidden border-2 border-gold-500/30 shadow-lg">
         <video 
           ref={videoRef} 
           className="absolute inset-0 w-full h-full object-cover transform -scale-x-100" 
@@ -128,28 +115,30 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
         />
         
         {!isTracking && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
-            <p className="text-lg">Click "Start AR" to begin</p>
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-charcoal-950/90 to-luxury-950/90 backdrop-blur-sm text-white">
+            <div className="text-center">
+              <p className="text-lg font-medium">Click "Start AR" to begin</p>
+              <p className="text-sm text-gray-400 mt-2">Experience luxury eyewear in AR</p>
+            </div>
           </div>
         )}
         
         {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-red-500/80 text-white p-4 text-center">
+          <div className="absolute inset-0 flex items-center justify-center bg-red-600/90 text-white p-4 text-center">
             <p>{error}</p>
           </div>
         )}
       </div>
 
-      {/* Controls */}
-      <div className="mt-4 flex flex-col gap-3 w-full max-w-md">
-        <div className="flex justify-between gap-2">
+      <div className="mt-6 flex flex-col gap-4 w-full max-w-md">
+        <div className="flex justify-between gap-3">
           {!isTracking ? (
             <button 
               type="button"
               id="ar-start-btn"
               onClick={handleStart}
               disabled={!isReady}
-              className="flex-1 bg-[#000042] hover:bg-blue-900 text-white font-bold py-2 px-4 rounded disabled:opacity-50 transition-colors"
+              className="flex-1 btn-primary py-3 text-base disabled:opacity-50"
             >
               {isReady ? 'Start AR Try-On' : 'Loading AR Engine...'}
             </button>
@@ -158,7 +147,7 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
               type="button"
               id="ar-stop-btn"
               onClick={handleStop}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors"
+              className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg shadow-red-600/30"
             >
               Stop AR
             </button>
@@ -166,13 +155,13 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
         </div>
 
         {isTracking && (
-          <div className="bg-gray-800 p-3 rounded flex flex-col gap-2">
+          <div className="glass-card p-4 space-y-3 border border-gold-500/20">
             <div className="flex justify-between text-sm">
-              <span>Dwell Time:</span>
-              <span className="font-mono text-green-400">{dwellTime}s</span>
+              <span className="text-gray-400">Dwell Time:</span>
+              <span className="font-mono text-gold-400 font-semibold">{dwellTime}s</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Scale:</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-400 min-w-fit">Scale:</span>
               <input 
                 type="range" 
                 min="0.5" 
@@ -180,9 +169,9 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
                 step="0.1" 
                 value={scale} 
                 onChange={(e) => adjustScale(Number.parseFloat(e.target.value) - scale)}
-                className="flex-1"
+                className="flex-1 accent-gold-500"
               />
-              <span className="text-xs text-gray-400 w-12">{scale.toFixed(1)}x</span>
+              <span className="text-sm text-gold-400 font-semibold min-w-fit">{scale.toFixed(1)}x</span>
             </div>
           </div>
         )}

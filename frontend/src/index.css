@@ -1,4 +1,4 @@
-/* src/index.css — Global styles + TailwindCSS base */
+/* src/index.css — Global styles with Luxurious Theme */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,60 +13,56 @@
   }
 
   body {
-    @apply bg-gray-950 text-gray-100 font-sans antialiased;
-    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+    @apply bg-charcoal-950 text-gray-100 font-sans antialiased;
+    background: linear-gradient(135deg, #020617 0%, #0f172a 25%, #1e293b 50%, #581c87 100%);
     min-height: 100vh;
+    background-attachment: fixed;
   }
 }
 
 @layer components {
-  /* ── Glassmorphism card ─────────────────────────────────────────── */
+  /* ── Glassmorphism card with luxury styling ─────────────────────── */
   .glass-card {
-    @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl;
+    @apply bg-white/5 backdrop-blur-md border border-gold-500/20 rounded-2xl;
+    box-shadow: 0 8px 32px 0 rgba(202, 138, 4, 0.1);
   }
 
-  /* ── Primary gradient button ──────────────────────────────────── */
+  /* ── Primary luxury gradient button ──────────────────────────────── */
   .btn-primary {
-    @apply px-6 py-3 rounded-xl font-semibold text-white transition-all duration-300
-           bg-gradient-to-r from-brand-600 to-accent-500 
-           hover:from-brand-700 hover:to-accent-500
-           hover:shadow-lg hover:shadow-brand-600/30
+    @apply px-6 py-3 rounded-xl font-semibold text-charcoal-950 transition-all duration-300
+           bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600
+           hover:from-gold-500 hover:via-gold-600 hover:to-gold-700
+           hover:shadow-lg hover:shadow-gold-500/50
            active:scale-95 cursor-pointer;
   }
 
-  /* ── Ghost button ───────────────────────────────────────────────── */
+  /* ── Ghost button with luxury accent ───────────────────────────────── */
   .btn-ghost {
-    @apply px-6 py-3 rounded-xl font-medium text-gray-200 border border-white/20 
-           hover:border-brand-500 hover:text-white transition-all duration-200
-           cursor-pointer;
+    @apply px-6 py-3 rounded-xl font-medium text-gold-400 border border-gold-500/30 
+           hover:border-gold-500 hover:text-gold-300 hover:bg-gold-500/10
+           transition-all duration-200 cursor-pointer;
   }
 
-  /* ── Product card ───────────────────────────────────────────────── */
+  /* ── Product card with luxury hover ───────────────────────────────── */
   .product-card {
     @apply glass-card p-4 cursor-pointer 
-           hover:border-brand-500/50 hover:scale-[1.02] 
-           transition-all duration-300 hover:shadow-xl hover:shadow-brand-600/20;
+           hover:border-gold-500/60 hover:scale-[1.02] 
+           transition-all duration-300 hover:shadow-xl hover:shadow-gold-500/30;
   }
 
-  /* ── Input field ────────────────────────────────────────────────── */
-  .input-field {
-    @apply w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3
-           text-white placeholder-gray-400 outline-none
-           focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20
-           transition-all duration-200;
+  /* ── Page transitions ───────────────────────────────────────────────── */
+  .page-enter {
+    animation: fadeIn 0.5s ease-in;
   }
-}
 
-/* ── Custom scrollbar ─────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #0f0f1a; }
-::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 3px; }
-
-/* ── Page transition ──────────────────────────────────────────────── */
-.page-enter {
-  animation: fadeSlideIn 0.3s ease-out forwards;
-}
-@keyframes fadeSlideIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0);    }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
