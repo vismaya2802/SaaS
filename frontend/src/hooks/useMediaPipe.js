@@ -1,4 +1,4 @@
-// hooks/useMediaPipe.js — Updated with SVG fallback glasses frames
+// hooks/useMediaPipe.js — AR glasses overlay with improved fallback
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 export function useMediaPipe(options = {}) {
@@ -28,52 +28,52 @@ export function useMediaPipe(options = {}) {
 
   // Create SVG glasses frame as fallback
   const createGlassesFrame = () => {
-    const svg = `
-      <svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg">
-        <!-- Left lens -->
-        <rect x="20" y="15" width="50" height="45" rx="5" fill="rgba(100, 150, 255, 0.3)" stroke="#4a90e2" stroke-width="2"/>
-        <!-- Right lens -->
-        <rect x="130" y="15" width="50" height="45" rx="5" fill="rgba(100, 150, 255, 0.3)" stroke="#4a90e2" stroke-width="2"/>
-        <!-- Bridge -->
-        <rect x="70" y="35" width="60" height="8" fill="#333" rx="2"/>
-        <!-- Left temple -->
-        <line x1="20" y1="40" x2="5" y2="55" stroke="#333" stroke-width="3" stroke-linecap="round"/>
-        <!-- Right temple -->
-        <line x1="180" y1="40" x2="195" y2="55" stroke="#333" stroke-width="3" stroke-linecap="round"/>
-      </svg>
-    `;
+    const svg = `<svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="lensGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#6B8FFF;stop-opacity:0.4" /><stop offset="100%" style="stop-color:#4A90E2;stop-opacity:0.6" /></linearGradient></defs><ellipse cx="60" cy="50" rx="40" ry="35" fill="url(#lensGradient)" stroke="#2C3E50" stroke-width="2.5"/><ellipse cx="180" cy="50" rx="40" ry="35" fill="url(#lensGradient)" stroke="#2C3E50" stroke-width="2.5"/><rect x="100" y="42" width="40" height="16" fill="#2C3E50" rx="3"/><path d="M 25 55 Q 15 60 10 75" stroke="#2C3E50" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 215 55 Q 225 60 230 75" stroke="#2C3E50" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="35" rx="12" ry="15" fill="white" opacity="0.3"/><ellipse cx="170" cy="35" rx="12" ry="15" fill="white" opacity="0.3"/></svg>`;
     
     return new Promise((resolve) => {
       const img = new Image();
-      img.onload = () => resolve(img);
+      img.onload = () => {
+        console.log('✅ SVG glasses frame loaded');
+        resolve(img);
+      };
+      img.onerror = () => {
+        console.error('Failed to create SVG');
+        resolve(null);
+      };
       img.src = 'data:image/svg+xml;base64,' + btoa(svg);
     });
   };
 
-  // Load glasses image from options.arAssetUrl or create fallback
+  // Load glasses image
   useEffect(() => {
     const loadImage = async () => {
-      if (options.arAssetUrl) {
-        // Try to load the provided asset URL
-        const img = new window.Image();
-        img.crossOrigin = 'anonymous';
-        img.src = options.arAssetUrl;
-        
-        img.onload = () => {
-          frameImageRef.current = img;
-          console.log('✅ Glasses image loaded from asset URL');
-        };
-        
-        img.onerror = async () => {
-          console.warn('⚠️ Failed to load glasses image from URL, using SVG fallback');
-          const fallbackImg = await createGlassesFrame();
-          frameImageRef.current = fallbackImg;
-        };
-      } else {
-        // Use SVG fallback if no asset URL provided
-        const fallbackImg = await createGlassesFrame();
-        frameImageRef.current = fallbackImg;
-        console.log('✅ SVG glasses frame created');
+      try {
+        if (options.arAssetUrl) {
+          const img = new window.Image();
+          img.crossOrigin = 'anonymous';
+          img.src = options.arAssetUrl;
+          
+          img.onload = () => {
+            frameImageRef.current = img;
+            console.log('✅ Product image loaded');
+          };
+          
+          img.onerror = async () => {
+            console.warn('Using SVG fallback');
+            frameImageRef.current = await createGlassesFrame();
+          };
+          
+          setTimeout(() => {
+            if (!frameImageRef.current) {
+              createGlassesFrame().then(img => { frameImageRef.current = img; });
+            }
+          }, 3000);
+        } else {
+          frameImageRef.current = await createGlassesFrame();
+        }
+      } catch (err) {
+        console.error('Error loading image:', err);
+        frameImageRef.current = await createGlassesFrame();
       }
     };
     
@@ -88,7 +88,6 @@ export function useMediaPipe(options = {}) {
     });
   }, []);
 
-  // ── FaceMesh landmark overlay rendering ──────────────────────────
   const onResults = useCallback((results) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -112,52 +111,54 @@ export function useMediaPipe(options = {}) {
       const ipd = Math.hypot(rx - lx, ry - ly);
       const angle = Math.atan2(ry - ly, rx - lx);
 
-      // Draw the glasses frame
-      if (frameImageRef.current) {
+      if (frameImageRef.current?.complete) {
         const img = frameImageRef.current;
         const currentScale = scaleRef.current || 1.0;
-        
-        // Calculate frame dimensions based on interpupillary distance
         const frameWidth = ipd * 2.2 * currentScale;
         const frameHeight = frameWidth * (img.height / (img.width || 1));
 
         ctx.save();
         ctx.translate(nx, ny);
         ctx.rotate(angle);
-        ctx.globalAlpha = 0.85; // Slight transparency
+        ctx.globalAlpha = 0.9;
         ctx.drawImage(img, -frameWidth / 2, -frameHeight / 2, frameWidth, frameHeight);
         ctx.restore();
       } else {
-        // Fallback: draw simple rectangles if image fails completely
-        ctx.strokeStyle = '#00FF00';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(nx - 100, ny - 50, 200, 100);
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
-        ctx.fillRect(nx - 100, ny - 50, 200, 100);
-        ctx.fillStyle = '#00FF00';
-        ctx.font = '14px Arial';
-        ctx.fillText('AR Frame Loading...', nx - 50, ny + 5);
+        // Face detected placeholder
+        ctx.fillStyle = 'rgba(0, 255, 100, 0.2)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#00FF64';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(nx - 120, ny - 60, 240, 120);
+        ctx.fillStyle = '#00FF64';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Face Detected', nx, ny - 20);
       }
+    } else {
+      ctx.fillStyle = 'rgba(255, 100, 100, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#FF6464';
+      ctx.font = 'bold 20px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('No Face Detected', canvas.width / 2, canvas.height / 2);
     }
   }, []);
 
   const startAR = useCallback(async () => {
     setError(null);
-    
-    // Check if MediaPipe is loaded from CDN
     if (!window.FaceMesh || !window.Camera) {
-      setError('MediaPipe libraries are loading. Please wait a moment and try again.');
+      setError('MediaPipe libraries loading...');
       return;
     }
 
     try {
       if (!videoRef.current || !canvasRef.current) {
-        throw new Error('Video or Canvas element not found');
+        throw new Error('Video or Canvas not found');
       }
 
       faceMeshRef.current = new window.FaceMesh({
-        locateFile: (file) =>
-          `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`,
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`,
       });
 
       faceMeshRef.current.setOptions({
@@ -183,7 +184,7 @@ export function useMediaPipe(options = {}) {
       setIsTracking(true);
     } catch (err) {
       console.error('Failed to start AR:', err);
-      setError(err.message || 'Unable to access webcam or start AR');
+      setError(err.message || 'Unable to start AR');
       setIsTracking(false);
     }
   }, [onResults]);
@@ -193,7 +194,7 @@ export function useMediaPipe(options = {}) {
       cameraRef.current?.stop();
       faceMeshRef.current?.close();
     } catch (e) {
-      console.warn('Error during camera stop:', e);
+      console.warn('Error stopping AR:', e);
     }
     setIsTracking(false);
   }, []);
