@@ -85,6 +85,10 @@ POST /api/telemetry/
 - ✅ Removed all "v3.0" references
 - ✅ Updated branding (Lenskart → VisionFrame)
 - ✅ Fixed Tailwind CSS @apply errors
+- ✅ Fixed input text visibility (white text on dark backgrounds)
+- ✅ Added .input-field class with luxury gold styling
+- ✅ Fixed input text visibility (white text on dark backgrounds)
+- ✅ Added .input-field class with luxury gold styling
 - ✅ Optimized image loading with fallbacks
 - ✅ Added crossOrigin for CDN images
 
