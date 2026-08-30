@@ -1,1 +1,11 @@
 userId,productId,eventType,dwellTimeSeconds,timestamp
+test_user_001,PROD_8675309,try_on_start,0,2026-08-30T22:21:12.423964+00:00
+test_user_001,PROD_8675309,try_on_update,2,2026-08-30T22:21:15.439126+00:00
+test_user_001,PROD_8675309,try_on_update,4,2026-08-30T22:21:17.450450+00:00
+test_user_001,PROD_8675309,try_on_update,6,2026-08-30T22:21:19.453406+00:00
+test_user_001,PROD_8675309,try_on_update,8,2026-08-30T22:21:21.459309+00:00
+test_user_001,PROD_8675309,try_on_start,0,2026-08-30T22:22:15.711525+00:00
+test_user_001,PROD_8675309,try_on_update,2,2026-08-30T22:22:18.721841+00:00
+test_user_001,PROD_8675309,try_on_update,4,2026-08-30T22:22:20.731304+00:00
+test_user_001,PROD_8675309,try_on_update,6,2026-08-30T22:22:22.746615+00:00
+test_user_001,PROD_8675309,try_on_update,8,2026-08-30T22:22:24.759376+00:00

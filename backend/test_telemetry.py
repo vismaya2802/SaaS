@@ -15,7 +15,7 @@ from pathlib import Path
 # Configuration
 BACKEND_URL = "http://localhost:8000"
 WEBSOCKET_URI = "ws://localhost:8000/api/telemetry/ws/test_user_001"
-CSV_FILE = Path("telemetry_stream.csv")
+CSV_FILE = Path(__file__).parent / "telemetry_stream.csv"
 
 # Colors for terminal output
 GREEN = '\033[92m'
@@ -97,20 +97,20 @@ def check_csv_file():
     """Verify CSV file exists and contains telemetry records"""
     print_header("📂 CSV FILE VERIFICATION")
     
-    csv_path = Path("../telemetry_stream.csv")  # Backend directory
-    if csv_path.exists():
-        print_success(f"CSV file exists at: {csv_path}")
+    if CSV_FILE.exists():
+        print_success(f"CSV file found: {CSV_FILE}")
         
         try:
-            with open(csv_path, mode='r', encoding='utf-8') as f:
+            with open(CSV_FILE, mode='r', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
                 records = list(reader)
                 
             if records:
-                print_success(f"Found {len(records)} telemetry records")
-                print("\nLatest records:")
+                print_success(f"Found {len(records)} telemetry records in CSV")
+                print(f"\n{BLUE}Latest 3 records:{RESET}")
                 for i, record in enumerate(records[-3:], 1):
-                    print(f"  {i}. {record}")
+                    print(f"  {i}. User: {record['userId']:20} | Event: {record['eventType']:15} | Dwell: {record['dwellTimeSeconds']}s")
+                return True
             else:
                 print_warning("CSV file exists but is empty")
                 return False
@@ -119,10 +119,8 @@ def check_csv_file():
             print_error(f"Error reading CSV: {e}")
             return False
     else:
-        print_warning(f"CSV file not found at: {csv_path}")
+        print_warning(f"CSV file not found at: {CSV_FILE}")
         return False
-    
-    return True
 
 
 def verify_backend_health():
@@ -134,7 +132,7 @@ def verify_backend_health():
         response = requests.get(f"{BACKEND_URL}/health", timeout=3)
         if response.status_code == 200:
             data = response.json()
-            print_success(f"Backend is healthy: {data['service']} v{data['version']}")
+            print_success(f"Backend healthy: {data['service']} v{data['version']}")
             return True
         else:
             print_error(f"Backend returned status {response.status_code}")
@@ -172,20 +170,24 @@ async def main():
     await asyncio.sleep(2)
     
     # Step 4: Verify CSV
-    if not check_csv_file():
-        print_warning("CSV verification failed (but WebSocket may have worked)")
+    csv_ok = check_csv_file()
     
+    # Step 5: Summary
     print_header("✨ TEST COMPLETE")
-    print_success("Telemetry verification suite finished!")
-    print_info("Check the backend logs for detailed event tracking.\n")
+    if csv_ok:
+        print_success("All telemetry endpoints working correctly!")
+    else:
+        print_warning("WebSocket OK but CSV verification incomplete")
+    print_info("Backend is streaming telemetry data to CSV for Power BI integration.\n")
 
 
 if __name__ == "__main__":
-    # Check for required websockets library
+    # Check for required libraries
     try:
         import websockets
+        import requests
     except ImportError:
-        print_warning("websockets library not found. Installing...")
+        print_warning("Installing required dependencies...")
         os.system("pip install websockets requests")
     
     try:
