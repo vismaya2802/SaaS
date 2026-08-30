@@ -5,6 +5,7 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
   const [ws, setWs] = useState(null);
   const [dwellTime, setDwellTime] = useState(0);
   const dwellTimerRef = useRef(null);
+  const canvasResizeRef = useRef(null);
 
   // 1. Initialize the MediaPipe Hook
   const {
@@ -23,10 +24,31 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
     onTelemetry: (data) => sendTelemetry(data)
   });
 
+  // ✅ FIX: Set canvas dimensions when video loads
+  useEffect(() => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      
+      const setCanvasSize = () => {
+        if (video.videoWidth && video.videoHeight) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          console.log(`✅ Canvas sized to ${canvas.width}x${canvas.height}`);
+        }
+      };
+      
+      video.addEventListener('loadedmetadata', setCanvasSize);
+      
+      return () => {
+        video.removeEventListener('loadedmetadata', setCanvasSize);
+      };
+    }
+  }, [videoRef, canvasRef, isTracking]);
+
   // 2. WebSocket Connection Setup
   useEffect(() => {
     if (isTracking && !ws) {
-      // Connect to our new local fallback WebSocket
       const effectiveUserId = userId || 'USER_ANON';
       const socketUrl = `ws://localhost:8000/api/telemetry/ws/${effectiveUserId}`;
       const socket = new WebSocket(socketUrl);
@@ -45,7 +67,7 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
     }
   }, [isTracking, userId]);
 
-  // 3. Dwell Time Tracker (Sends updates every 3 seconds)
+  // 3. Dwell Time Tracker
   useEffect(() => {
     if (isTracking) {
       dwellTimerRef.current = setInterval(() => {
@@ -96,15 +118,18 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
           className="absolute inset-0 w-full h-full object-cover transform -scale-x-100" 
           playsInline 
           muted 
+          autoPlay
         />
         <canvas 
-          ref={canvasRef} 
+          ref={canvasRef}
+          width={640}
+          height={480}
           className="absolute inset-0 w-full h-full object-cover transform -scale-x-100" 
         />
         
         {!isTracking && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
-            <p>Click "Start AR" to begin</p>
+            <p className="text-lg">Click "Start AR" to begin</p>
           </div>
         )}
         
@@ -157,6 +182,7 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
                 onChange={(e) => adjustScale(Number.parseFloat(e.target.value) - scale)}
                 className="flex-1"
               />
+              <span className="text-xs text-gray-400 w-12">{scale.toFixed(1)}x</span>
             </div>
           </div>
         )}

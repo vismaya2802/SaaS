@@ -1,4 +1,4 @@
-// pages/ProductDetail.jsx — Product detail page with AR try-on
+// pages/ProductDetail.jsx — Product detail page with AR try-on (FIXED: Hooks order)
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../hooks/useAPI";
@@ -14,9 +14,12 @@ const LENS_TYPES = [
 ];
 
 export default function ProductDetail() {
+  // ✅ FIX: ALL HOOKS AT THE TOP BEFORE ANY CONDITIONAL LOGIC
   const { productId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth(); // Moved to top!
   const addItem = useCartStore((s) => s.addItem);
+  
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lensType, setLensType] = useState("zero_power");
@@ -42,6 +45,7 @@ export default function ProductDetail() {
     setTimeout(() => setAdded(false), 2000);
   }
 
+  // ✅ Conditional rendering AFTER all hooks
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -51,8 +55,6 @@ export default function ProductDetail() {
   }
 
   if (!product) return null;
-
-  const { user } = useAuth();
 
   return (
     <main className="min-h-screen page-enter">

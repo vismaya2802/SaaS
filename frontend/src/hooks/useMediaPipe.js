@@ -1,4 +1,4 @@
-// hooks/useMediaPipe.js — AR glasses overlay with improved fallback
+// hooks/useMediaPipe.js — AR glasses overlay with proper cleanup
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 export function useMediaPipe(options = {}) {
@@ -7,6 +7,8 @@ export function useMediaPipe(options = {}) {
   const faceMeshRef = useRef(null);
   const cameraRef = useRef(null);
   const frameImageRef = useRef(null);
+  const animationFrameRef = useRef(null);
+  const streamRef = useRef(null);
 
   const [isReady, setIsReady] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
@@ -49,6 +51,7 @@ export function useMediaPipe(options = {}) {
     const loadImage = async () => {
       try {
         if (options.arAssetUrl) {
+          console.log('📸 Loading AR asset:', options.arAssetUrl);
           const img = new window.Image();
           img.crossOrigin = 'anonymous';
           img.src = options.arAssetUrl;
@@ -59,7 +62,7 @@ export function useMediaPipe(options = {}) {
           };
           
           img.onerror = async () => {
-            console.warn('Using SVG fallback');
+            console.warn('⚠️ Using SVG fallback');
             frameImageRef.current = await createGlassesFrame();
           };
           
@@ -90,7 +93,7 @@ export function useMediaPipe(options = {}) {
 
   const onResults = useCallback((results) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !isTracking) return;
     
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -133,7 +136,9 @@ export function useMediaPipe(options = {}) {
         ctx.fillStyle = '#00FF64';
         ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('Face Detected', nx, ny - 20);
+        ctx.fillText('Face Detected ✓', nx, ny - 20);
+        ctx.font = '12px Arial';
+        ctx.fillText('Loading glasses...', nx, ny + 10);
       }
     } else {
       ctx.fillStyle = 'rgba(255, 100, 100, 0.1)';
@@ -142,8 +147,10 @@ export function useMediaPipe(options = {}) {
       ctx.font = 'bold 20px Arial';
       ctx.textAlign = 'center';
       ctx.fillText('No Face Detected', canvas.width / 2, canvas.height / 2);
+      ctx.font = '14px Arial';
+      ctx.fillText('Please face the camera', canvas.width / 2, canvas.height / 2 + 30);
     }
-  }, []);
+  }, [isTracking]);
 
   const startAR = useCallback(async () => {
     setError(null);
@@ -172,7 +179,7 @@ export function useMediaPipe(options = {}) {
 
       cameraRef.current = new window.Camera(videoRef.current, {
         onFrame: async () => {
-          if (faceMeshRef.current && videoRef.current) {
+          if (faceMeshRef.current && videoRef.current && isTracking) {
             await faceMeshRef.current.send({ image: videoRef.current });
           }
         },
@@ -181,22 +188,90 @@ export function useMediaPipe(options = {}) {
       });
 
       await cameraRef.current.start();
+      
+      // Store stream reference
+      if (videoRef.current && videoRef.current.srcObject) {
+        streamRef.current = videoRef.current.srcObject;
+      }
+      
       setIsTracking(true);
+      console.log('🎥 AR started');
     } catch (err) {
       console.error('Failed to start AR:', err);
       setError(err.message || 'Unable to start AR');
       setIsTracking(false);
     }
-  }, [onResults]);
+  }, [onResults, isTracking]);
 
+  // ✅ FIX: Safe stop with proper cleanup order
   const stopAR = useCallback(() => {
-    try {
-      cameraRef.current?.stop();
-      faceMeshRef.current?.close();
-    } catch (e) {
-      console.warn('Error stopping AR:', e);
-    }
+    console.log('🛑 Stopping AR...');
+    
+    // 1. Immediately stop tracking to prevent new frames
     setIsTracking(false);
+    
+    // 2. Cancel any pending animation frames
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    // 3. Stop MediaPipe camera (this triggers the binding error, so wrap it)
+    if (cameraRef.current) {
+      try {
+        cameraRef.current.stop();
+      } catch (e) {
+        // Silently ignore MediaPipe WASM cleanup errors
+      }
+      cameraRef.current = null;
+    }
+    
+    // 4. Close MediaPipe FaceMesh
+    if (faceMeshRef.current) {
+      try {
+        faceMeshRef.current.close();
+      } catch (e) {
+        // Silently ignore cleanup errors
+      }
+      faceMeshRef.current = null;
+    }
+    
+    // 5. Stop camera tracks manually as fallback
+    if (streamRef.current) {
+      try {
+        streamRef.current.getTracks().forEach(track => {
+          try {
+            track.stop();
+          } catch (e) {
+            // Ignore
+          }
+        });
+      } catch (e) {
+        // Ignore
+      }
+      streamRef.current = null;
+    }
+    
+    // 6. Clear video source
+    if (videoRef.current) {
+      try {
+        videoRef.current.srcObject = null;
+      } catch (e) {
+        // Ignore
+      }
+    }
+    
+    // 7. Clear canvas
+    if (canvasRef.current) {
+      try {
+        const ctx = canvasRef.current.getContext('2d');
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      } catch (e) {
+        // Ignore
+      }
+    }
+    
+    console.log('✅ AR stopped cleanly');
   }, []);
 
   useEffect(() => {
