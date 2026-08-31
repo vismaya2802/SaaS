@@ -1,0 +1,13 @@
+Railway Configuration Files Needed
+
+Create these files in your project root:
+
+1. Procfile:
+web: cd backend && uvicorn app.main:app
+
+2. railway.toml:
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "cd backend && uvicorn app.main:app"
