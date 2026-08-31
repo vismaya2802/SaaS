@@ -94,7 +94,7 @@ const Dashboard = () => {
       console.error('Dashboard WebSocket error:', err);
       setConnected(false);
       // Try HTTP fallback if WebSocket fails
-      fetch(\/dashboard/metrics\)
+      fetch(`${apiUrl}/dashboard/metrics`)
         .then(res => res.json())
         .then(data => setMetrics(data))
         .catch(e => console.error('HTTP fallback failed:', e));
@@ -387,3 +387,4 @@ const SimpleTrendChart = ({ data, dataKey, color, prefix = '' }) => {
 };
 
 export default Dashboard;
+
