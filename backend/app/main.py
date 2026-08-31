@@ -22,30 +22,34 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     print("[OK] Database tables created / verified.")
     yield
-    print("[SHUTDOWN] Lenskart SaaS backend stopping.")
+    print("[SHUTDOWN] VisionFrame backend stopping.")
 
 
 # ─── App factory ─────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="VisionFrame v3.0",
+    title="VisionFrame Luxury Eyewear",
     description=(
-        "College Project — Zero-Defect, $0.00 Deployment.\n\n"
+        "VisionFrame SaaS Platform — Luxury Eyewear E-commerce.\n\n"
         "Backend: FastAPI + SQLAlchemy + SQLite + WebSockets.\n"
         "Analytics: PowerBI Push Dataset (streamed via Python SDK)."
     ),
-    version="3.0.0",
+    version="1.0.0",
     lifespan=lifespan,
 )
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────
+# Get CORS origins from environment variable or use defaults
+cors_origins = os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else [
+    "http://localhost:5173",           # Vite default dev port
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "https://visionframe-app.vercel.app",  # Production Vercel URL
+    "https://*.vercel.app",            # All Vercel preview deployments
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",   # Vite default dev port
-        "http://localhost:3000",
-        "https://saasvf.vercel.app",  # Production Vercel URL
-        "https://*.vercel.app",     # All Vercel preview deployments
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,5 +67,14 @@ app.include_router(telemetry.router)
 # ─── Health check ─────────────────────────────────────────────────────────────
 @app.get("/health", tags=["Health"])
 async def health():
-    return {"status": "ok", "service": "visionframe-backend", "version": "3.0.0"}
+    return {"status": "ok", "service": "visionframe-backend", "version": "1.0.0"}
 
+# ─── Root endpoint ────────────────────────────────────────────────────────────
+@app.get("/", tags=["Root"])
+async def root():
+    return {
+        "message": "VisionFrame API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health"
+    }
