@@ -263,9 +263,15 @@ setInterval(() => {
   sessionManager.updateActivity();
 }, 30000);
 
-// End session on page unload (if user closes browser)
+// End session on page unload (use sendBeacon for reliability)
 window.addEventListener('beforeunload', () => {
-  sessionManager.endSession();
+  if (sessionManager.sessionId) {
+    const url = `${sessionManager.apiBaseUrl}/telemetry/session/${sessionManager.sessionId}/end`;
+    // sendBeacon is guaranteed to send even during page unload
+    navigator.sendBeacon(url, '');
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_START_KEY);
+  }
 });
 
 export default sessionManager;

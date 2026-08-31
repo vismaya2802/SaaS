@@ -11,7 +11,7 @@ from typing import List, Dict, Any
 import json
 import asyncio
 
-from app.database import get_db
+from app.database import get_db, SessionLocal, SessionLocal
 from app.models import (
     User, Product, Order, ARTelemetry, UserSession,
     FunnelEvent, HeatmapData, ABTestExperiment, ABTestAssignment
@@ -258,7 +258,7 @@ def get_dashboard_overview(db: Session = Depends(get_db)):
 
 
 @router.websocket("/ws")
-async def websocket_dashboard_stream(websocket: WebSocket, db: Session = Depends(get_db)):
+async def websocket_dashboard_stream(websocket: WebSocket):
     """
     WebSocket endpoint for real-time dashboard metrics streaming.
     Sends updated metrics every 5 seconds.
@@ -267,14 +267,19 @@ async def websocket_dashboard_stream(websocket: WebSocket, db: Session = Depends
     
     try:
         while True:
-            # Get fresh metrics from database
-            metrics = get_realtime_metrics(db)
-            
-            # Send to this specific connection
-            await websocket.send_json({
-                'type': 'metrics_update',
-                'data': metrics
-            })
+            # Create new database session for each iteration
+            db = SessionLocal()
+            try:
+                # Get fresh metrics from database
+                metrics = get_realtime_metrics(db)
+                
+                # Send to this specific connection
+                await websocket.send_json({
+                    'type': 'metrics_update',
+                    'data': metrics
+                })
+            finally:
+                db.close()
             
             # Wait 5 seconds before next update
             await asyncio.sleep(5)

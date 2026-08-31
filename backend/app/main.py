@@ -4,6 +4,8 @@ Run with: uvicorn app.main:app --reload  (from backend/ directory)
 """
 
 import os
+import threading
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -11,6 +13,33 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
 from app.routers import auth, products, cart, promos, payment, telemetry, dashboard
+
+
+
+
+# ─── Session Cleanup Background Job ──────────────────────────────────────────
+def cleanup_expired_sessions():
+    """Background thread to clean up expired sessions every hour"""
+    from datetime import datetime, timezone, timedelta
+    from app.database import SessionLocal
+    from app.models import UserSession
+    
+    while True:
+        time.sleep(3600)  # Run every hour
+        db = SessionLocal()
+        try:
+            cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
+            expired_count = db.query(UserSession).filter(
+                UserSession.last_activity_at < cutoff,
+                UserSession.ended_at == None
+            ).update({'ended_at': datetime.now(timezone.utc)})
+            db.commit()
+            if expired_count > 0:
+                print(f"[CLEANUP] Closed {expired_count} expired sessions")
+        except Exception as e:
+            print(f"[CLEANUP ERROR] {e}")
+        finally:
+            db.close()
 
 
 # ─── Lifespan: DB auto-migration on startup ───────────────────────────────────
@@ -21,6 +50,10 @@ async def lifespan(app: FastAPI):
     # Create all tables (idempotent; safe to run every boot in dev)
     Base.metadata.create_all(bind=engine)
     print("[OK] Database tables created / verified.")
+    
+    # Start session cleanup background thread
+    threading.Thread(target=cleanup_expired_sessions, daemon=True).start()
+    print("[OK] Session cleanup thread started")
     yield
     print("[SHUTDOWN] VisionFrame backend stopping.")
 

@@ -479,7 +479,7 @@ def get_ab_test_results(experiment_name: str, db: Session = Depends(get_db)):
     assignments = db.query(
         ABTestAssignment.variant_name,
         func.count(ABTestAssignment.id).label("total_assigned"),
-        func.sum(func.cast(ABTestAssignment.converted, Integer)).label("total_converted")
+        func.sum(ABTestAssignment.converted).label("total_converted")
     ).filter(ABTestAssignment.experiment_id == experiment.experiment_id)\
     .group_by(ABTestAssignment.variant_name)\
     .all()
