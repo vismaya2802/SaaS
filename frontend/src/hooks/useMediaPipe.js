@@ -1,4 +1,4 @@
-// hooks/useMediaPipe.js — AR glasses overlay WITH face tracking
+// hooks/useMediaPipe.js — AR with visual debugging
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 export function useMediaPipe(options = {}) {
@@ -8,11 +8,13 @@ export function useMediaPipe(options = {}) {
   const cameraRef = useRef(null);
   const glassesImageRef = useRef(null);
   const streamRef = useRef(null);
+  const faceDetectedRef = useRef(false);
 
   const [isReady, setIsReady] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
   const [error, setError] = useState(null);
   const [scale, setScale] = useState(1.0);
+  const [debugInfo, setDebugInfo] = useState('');
   const scaleRef = useRef(1.0);
 
   // Check MediaPipe loaded
@@ -20,26 +22,30 @@ export function useMediaPipe(options = {}) {
     const check = () => {
       if (window.FaceMesh && window.Camera) {
         setIsReady(true);
+        setDebugInfo('✅ MediaPipe loaded');
         console.log('✅ MediaPipe ready');
       } else {
+        setDebugInfo('⏳ Loading MediaPipe...');
         setTimeout(check, 100);
       }
     };
     check();
   }, []);
 
-  // Create gold glasses image
+  // Create gold glasses
   useEffect(() => {
-    console.log('🕶️ Creating glasses overlay...');
+    console.log('🕶️ Creating glasses...');
+    setDebugInfo('🕶️ Creating glasses...');
+    
     const canvas = document.createElement('canvas');
     canvas.width = 400;
     canvas.height = 150;
     const ctx = canvas.getContext('2d');
     
-    // Draw luxury gold glasses
+    // Bright gold glasses for visibility
     ctx.strokeStyle = '#FFD700';
-    ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
-    ctx.lineWidth = 6;
+    ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+    ctx.lineWidth = 8;
     
     // Left lens
     ctx.beginPath();
@@ -56,30 +62,16 @@ export function useMediaPipe(options = {}) {
     // Bridge
     ctx.fillStyle = '#FFD700';
     ctx.fillRect(165, 60, 70, 30);
-    ctx.strokeRect(165, 60, 70, 30);
     
-    // Temples (arms)
-    ctx.lineWidth = 8;
-    ctx.beginPath();
-    ctx.moveTo(30, 75);
-    ctx.lineTo(0, 80);
-    ctx.stroke();
-    
-    ctx.beginPath();
-    ctx.moveTo(370, 75);
-    ctx.lineTo(400, 80);
-    ctx.stroke();
-    
-    // Convert to image
     const img = new Image();
     img.src = canvas.toDataURL();
     img.onload = () => {
       glassesImageRef.current = img;
-      console.log('✅ Glasses image ready');
+      setDebugInfo('✅ Glasses ready');
+      console.log('✅ Glasses ready');
     };
   }, []);
 
-  // MediaPipe face tracking callback
   const onResults = useCallback((results) => {
     const canvas = canvasRef.current;
     if (!canvas || !isTracking) return;
@@ -87,88 +79,89 @@ export function useMediaPipe(options = {}) {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // ALWAYS draw debug info
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText(`Debug: ${debugInfo}`, 10, 20);
+    
     if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+      faceDetectedRef.current = true;
       const landmarks = results.multiFaceLandmarks[0];
       
-      // Key facial landmarks
-      const leftEye = landmarks[33];   // Left eye outer corner
-      const rightEye = landmarks[263]; // Right eye outer corner
-      const noseTip = landmarks[1];    // Nose tip
+      const leftEye = landmarks[33];
+      const rightEye = landmarks[263];
+      const noseTip = landmarks[1];
       
-      // Convert normalized coordinates to pixel coordinates
       const lx = leftEye.x * canvas.width;
       const ly = leftEye.y * canvas.height;
       const rx = rightEye.x * canvas.width;
       const ry = rightEye.y * canvas.height;
-      const nx = noseTip.x * canvas.width;
-      const ny = noseTip.y * canvas.height;
       
-      // Calculate inter-pupillary distance (IPD)
       const ipd = Math.hypot(rx - lx, ry - ly);
-      
-      // Calculate face rotation angle
       const angle = Math.atan2(ry - ly, rx - lx);
       
-      // Draw glasses if image is ready
+      // Draw face landmarks for debugging
+      ctx.fillStyle = '#00FF00';
+      ctx.beginPath();
+      ctx.arc(lx, ly, 5, 0, Math.PI * 2);
+      ctx.arc(rx, ry, 5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Draw glasses
       if (glassesImageRef.current) {
         const img = glassesImageRef.current;
         const currentScale = scaleRef.current;
-        
-        // Size glasses based on IPD and scale
         const glassesWidth = ipd * 2.8 * currentScale;
         const glassesHeight = (glassesWidth / 400) * 150;
-        
-        // Position slightly above nose bridge
         const centerX = (lx + rx) / 2;
         const centerY = (ly + ry) / 2 - ipd * 0.15;
         
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(angle);
-        ctx.globalAlpha = 0.85;
-        ctx.drawImage(
-          img,
-          -glassesWidth / 2,
-          -glassesHeight / 2,
-          glassesWidth,
-          glassesHeight
-        );
+        ctx.globalAlpha = 0.9;
+        ctx.drawImage(img, -glassesWidth / 2, -glassesHeight / 2, glassesWidth, glassesHeight);
         ctx.restore();
         
-        // Face detected indicator
-        ctx.fillStyle = '#00FF64';
-        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = '#00FF00';
+        ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('✓ Face Tracked', canvas.width / 2, 25);
+        ctx.fillText('✓ GLASSES ACTIVE', canvas.width / 2, 40);
+      } else {
+        ctx.fillStyle = '#FFFF00';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('⏳ Loading glasses image...', canvas.width / 2, canvas.height / 2);
       }
     } else {
-      // No face detected
-      ctx.fillStyle = 'rgba(255, 100, 100, 0.1)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      faceDetectedRef.current = false;
       ctx.fillStyle = '#FF6464';
-      ctx.font = 'bold 16px Arial';
+      ctx.font = 'bold 18px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('⚠ No Face Detected', canvas.width / 2, canvas.height / 2);
-      ctx.font = '12px Arial';
-      ctx.fillText('Please face the camera', canvas.width / 2, canvas.height / 2 + 25);
+      ctx.fillText('⚠ NO FACE DETECTED', canvas.width / 2, canvas.height / 2);
+      ctx.font = '14px Arial';
+      ctx.fillText('Look at the camera', canvas.width / 2, canvas.height / 2 + 30);
     }
-  }, [isTracking]);
+  }, [isTracking, debugInfo]);
 
   const startAR = useCallback(async () => {
     if (!isReady) {
       setError('MediaPipe not ready');
+      setDebugInfo('❌ MediaPipe not ready');
       return;
     }
     
     if (!glassesImageRef.current) {
-      setError('Glasses image loading...');
+      setError('Glasses loading...');
+      setDebugInfo('⏳ Glasses loading...');
+      setTimeout(() => startAR(), 500);
       return;
     }
     
     try {
-      console.log('🎥 Starting AR with face tracking...');
+      setDebugInfo('🎥 Starting camera...');
+      console.log('🎥 Starting AR...');
       
-      // Initialize MediaPipe FaceMesh
       faceMeshRef.current = new window.FaceMesh({
         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`,
       });
@@ -182,7 +175,6 @@ export function useMediaPipe(options = {}) {
       
       faceMeshRef.current.onResults(onResults);
       
-      // Start camera
       cameraRef.current = new window.Camera(videoRef.current, {
         onFrame: async () => {
           if (faceMeshRef.current && videoRef.current) {
@@ -200,17 +192,21 @@ export function useMediaPipe(options = {}) {
       }
       
       setIsTracking(true);
+      setDebugInfo('✅ AR ACTIVE');
       console.log('✅ AR tracking started');
       
     } catch (err) {
-      console.error('❌ AR start failed:', err);
+      console.error('❌ AR failed:', err);
       setError(err.message);
+      setDebugInfo(`❌ Error: ${err.message}`);
     }
   }, [isReady, onResults]);
 
   const stopAR = useCallback(() => {
     console.log('🛑 Stopping AR');
+    setDebugInfo('🛑 Stopped');
     setIsTracking(false);
+    faceDetectedRef.current = false;
     
     if (cameraRef.current) {
       try { cameraRef.current.stop(); } catch (e) {}
