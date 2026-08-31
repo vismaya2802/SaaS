@@ -183,7 +183,7 @@ class FunnelEventRequest(BaseModel):
         description="landing | browse_products | view_product | try_ar | add_to_cart | checkout | payment | completed"
     )
     product_id: Optional[str] = None
-    metadata: Optional[str] = None  # JSON string
+    event_metadata: Optional[str] = None  # JSON string
 
 
 class FunnelEventResponse(BaseModel):

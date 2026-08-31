@@ -131,7 +131,7 @@ class SessionManager {
         session_id: this.sessionId,
         funnel_stage: stage,
         product_id: productId,
-        metadata: metadata ? JSON.stringify(metadata) : null,
+        event_metadata: metadata ? JSON.stringify(metadata) : null,
       };
       
       const user = JSON.parse(localStorage.getItem('vf_user') || '{}');

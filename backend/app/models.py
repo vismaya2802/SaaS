@@ -167,7 +167,7 @@ class FunnelEvent(Base):
     # funnel_stage: landing | browse_products | view_product | try_ar | add_to_cart | checkout | payment | completed
     product_id = Column(Text, ForeignKey("products.id"), nullable=True)
     timestamp = Column(DateTime, default=_now, nullable=False)
-    metadata = Column(Text, nullable=True)  # JSON string for additional data
+    event_metadata = Column(Text, nullable=True)  # JSON string for additional data
     
     # Relationships
     session_ref = relationship("UserSession", foreign_keys=[session_id])
