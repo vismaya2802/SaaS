@@ -8,7 +8,29 @@ import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [metrics, setMetrics] = useState(null);
+  // Sample/fallback metrics data
+  const defaultMetrics = {
+    timestamp: new Date().toISOString(),
+    active_sessions: 2,
+    sessions_today: 15,
+    conversion_rate: 8.5,
+    revenue_today: 45000,
+    ar_sessions_hour: 5,
+    avg_session_duration: 240,
+    active_experiments: 1,
+    top_products: [{id: 'p1', title: 'Sample Product', try_count: 12}],
+    funnel: [
+      {stage: 'landing', count: 100, percentage: 100},
+      {stage: 'view_product', count: 75, percentage: 75},
+      {stage: 'try_ar', count: 50, percentage: 50},
+      {stage: 'add_to_cart', count: 35, percentage: 35},
+      {stage: 'checkout', count: 20, percentage: 20},
+      {stage: 'payment', count: 15, percentage: 15},
+      {stage: 'completed', count: 12, percentage: 12}
+    ]
+  };
+
+  const [metrics, setMetrics] = useState(defaultMetrics);
   const [overview, setOverview] = useState(null);
   const [activeSessions, setActiveSessions] = useState([]);
   const [trendingProducts, setTrendingProducts] = useState([]);
@@ -71,6 +93,11 @@ const Dashboard = () => {
     socket.onerror = (err) => {
       console.error('Dashboard WebSocket error:', err);
       setConnected(false);
+      // Try HTTP fallback if WebSocket fails
+      fetch(\/dashboard/metrics\)
+        .then(res => res.json())
+        .then(data => setMetrics(data))
+        .catch(e => console.error('HTTP fallback failed:', e));
     };
 
     wsRef.current = socket;
