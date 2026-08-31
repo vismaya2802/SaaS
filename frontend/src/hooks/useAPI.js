@@ -1,8 +1,11 @@
 // hooks/useAPI.js — Axios instance pre-configured for the FastAPI backend
 import axios from 'axios'
 
+// Use environment variable or fallback to relative path for local dev
+const baseURL = import.meta.env.VITE_API_URL || '/api'
+
 const api = axios.create({
-  baseURL: '/api',          // Vite proxy rewrites → http://localhost:8000/api
+  baseURL: baseURL,
   timeout: 10_000,
   headers: { 'Content-Type': 'application/json' },
 })
@@ -30,4 +33,3 @@ api.interceptors.response.use(
 )
 
 export default api
-
