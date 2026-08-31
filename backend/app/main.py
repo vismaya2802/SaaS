@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
-from app.routers import auth, products, cart, promos, payment, telemetry
+from app.routers import auth, products, cart, promos, payment, telemetry, dashboard
 
 
 # ─── Lifespan: DB auto-migration on startup ───────────────────────────────────
@@ -62,6 +62,7 @@ app.include_router(cart.router,      prefix="/api/cart",     tags=["Cart"])
 app.include_router(promos.router,    prefix="/api/promos",   tags=["Promos"])
 app.include_router(payment.router,   prefix="/api/payment",  tags=["Payment"])
 app.include_router(telemetry.router)
+app.include_router(dashboard.router)
 
 
 # ─── Health check ─────────────────────────────────────────────────────────────

@@ -40,6 +40,12 @@ export default function Navbar() {
                 {cat}
               </Link>
             ))}
+            <Link
+              to="/dashboard"
+              className="text-gray-300 hover:text-gold-400 text-sm font-medium transition-colors duration-200 border-b-2 border-transparent hover:border-gold-500 flex items-center gap-1"
+            >
+              📊 Dashboard
+            </Link>
           </div>
 
           {/* ── Actions ── */}

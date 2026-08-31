@@ -10,6 +10,7 @@ import OTPModal from './components/OTPModal'
 const Home         = lazy(() => import('./pages/Home'))
 const ProductDetail = lazy(() => import('./pages/ProductDetail'))
 const Checkout     = lazy(() => import('./pages/Checkout'))
+const Dashboard    = lazy(() => import('./pages/Dashboard'))
 
 // ── Page loading fallback ─────────────────────────────────────────
 function PageLoader() {
@@ -45,6 +46,9 @@ export default function App() {
 
             {/* Checkout flow */}
             <Route path="/checkout" element={<Checkout />} />
+
+            {/* Analytics Dashboard */}
+            <Route path="/dashboard" element={<Dashboard />} />
 
             {/* Catch-all → redirect home */}
             <Route path="*" element={<Navigate to="/" replace />} />
