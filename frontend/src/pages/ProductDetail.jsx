@@ -5,6 +5,7 @@ import api from "../hooks/useAPI";
 import ARView from "../components/ARView";
 import { useCartStore } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useAnalytics } from "../hooks/useAnalytics";
 
 const LENS_TYPES = [
   { value: "zero_power", label: "Zero Power (Fashion)", icon: "✨" },
@@ -18,6 +19,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const addItem = useCartStore((s) => s.addItem);
+  const { trackFunnel } = useAnalytics({ trackPageViews: true });
   
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,10 +28,13 @@ export default function ProductDetail() {
 
   useEffect(() => {
     api.get(`/products/${productId}`)
-      .then(({ data }) => setProduct(data))
+      .then(({ data }) => {
+        setProduct(data);
+        trackFunnel('view_product', productId);
+      })
       .catch(() => navigate("/"))
       .finally(() => setLoading(false));
-  }, [productId, navigate]);
+  }, [productId, navigate, trackFunnel]);
 
   function handleAddToCart() {
     if (!product) return;
@@ -40,6 +45,7 @@ export default function ProductDetail() {
       lensType,
       arAssetUrl: product.ar_asset_url,
     });
+    trackFunnel('add_to_cart', product.id);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   }

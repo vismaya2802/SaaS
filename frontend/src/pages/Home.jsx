@@ -1,8 +1,9 @@
 // pages/Home.jsx — Homepage with luxury styling
-import React from 'react'
+import React, { useEffect } from 'react'
 import HeroCarousel from '../components/HeroCarousel'
 import ProductGrid  from '../components/ProductGrid'
 import { useSearchParams } from 'react-router-dom'
+import { useAnalytics } from '../hooks/useAnalytics'
 
 const CATEGORIES = ['All', 'Eyeglasses', 'Sunglasses', 'Lenses']
 const SHAPES     = ['All Shapes', 'Round', 'Rectangle', 'Cat-Eye', 'Aviator']
@@ -11,6 +12,11 @@ export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeCategory = searchParams.get('category') ?? ''
   const activeShape    = searchParams.get('shape') ?? ''
+  const { trackFunnel } = useAnalytics({ trackPageViews: true })
+
+  useEffect(() => {
+    trackFunnel('landing')
+  }, [trackFunnel])
 
   function setFilter(key, value) {
     const next = new URLSearchParams(searchParams)

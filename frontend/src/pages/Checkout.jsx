@@ -1,9 +1,10 @@
 // pages/Checkout.jsx — Multi-step checkout flow
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import api from '../hooks/useAPI'
+import { useAnalytics } from '../hooks/useAnalytics'
 
 const PAYMENT_METHODS = [
   { value: 'upi',        label: '📱 UPI',        desc: 'Google Pay, PhonePe, Paytm' },
@@ -17,6 +18,7 @@ export default function Checkout() {
   const items           = useCartStore((s) => s.items)
   const clearCart       = useCartStore((s) => s.clearCart)
   const { isLoggedIn, user, setShowOTPModal } = useAuth()
+  const { trackFunnel, markConverted } = useAnalytics({ trackPageViews: true })
 
   const [step, setStep]                 = useState(1) // 1=review 2=promo 3=payment 4=success
   const [promoCode, setPromoCode]       = useState('')
@@ -30,6 +32,10 @@ export default function Checkout() {
   const subtotal     = items.reduce((a, i) => a + i.price * i.quantity, 0)
   const discount     = promoResult?.discount_amount ?? 0
   const finalAmount  = promoResult?.final_amount ?? subtotal
+
+  useEffect(() => {
+    trackFunnel('checkout')
+  }, [trackFunnel])
 
   // ── Redirect if cart empty ───────────────────────────────────────
   if (!items.length && step !== 4) {
@@ -64,6 +70,7 @@ export default function Checkout() {
   async function handlePay() {
     if (!isLoggedIn) { setShowOTPModal(true); return }
     setPaying(true)
+    trackFunnel('payment')
     try {
       // Step 1: Create order
       const { data: order } = await api.post('/payment/create-order', {
@@ -82,6 +89,8 @@ export default function Checkout() {
 
       setConfirmedOrder({ ...order, ...verified })
       clearCart()
+      trackFunnel('completed')
+      markConverted() // Mark session as converted
       setStep(4)
     } catch (err) {
       alert('Payment failed. Please try again.')

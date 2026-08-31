@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useMediaPipe } from '../hooks/useMediaPipe';
+import sessionManager from '../utils/sessionManager';
 
 const ARView = ({ productId, productName, userId, arAssetUrl }) => {
   const [ws, setWs] = useState(null);
@@ -77,6 +78,10 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
         product_id: productId,
         event_type: eventData.event_type,
         dwell_time_seconds: dwellTime,
+        session_id: sessionManager.getSessionId(),
+        page_url: window.location.href,
+        referrer: document.referrer || null,
+        user_agent: navigator.userAgent,
         timestamp: new Date().toISOString()
       };
       ws.send(JSON.stringify(payload));
@@ -86,6 +91,7 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
   const handleStart = () => {
     startAR();
     sendTelemetry({ event_type: 'TRY_ON_START', dwell_time_seconds: 0 });
+    sessionManager.trackFunnel('try_ar', productId);
   };
 
   const handleStop = () => {
