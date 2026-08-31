@@ -1,0 +1,23 @@
+# FINAL FIX: Railway Root Directory Issue
+
+Railway cannot find your app because everything is in the backend/ subdirectory.
+
+## SOLUTION: Tell Railway where your app is
+
+In Railway Dashboard:
+1. Click on saasvf service
+2. Go to Settings
+3. Find 'Root Directory' or 'Source' setting
+4. Set it to: backend
+5. Save
+
+Then your start command becomes simple:
+uvicorn app.main:app
+
+OR
+
+Use this Procfile in PROJECT ROOT:
+web: cd backend && uvicorn app.main:app
+
+I've created both Procfile and runtime.txt.
+Push these and Railway should work.
