@@ -1,0 +1,91 @@
+name: Pull Request Review
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  pr-check:
+    name: PR Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Check PR title format
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
+          
+          # Check if title follows conventional format
+          if [[ ! $PR_TITLE =~ ^(feat|fix|docs|style|refactor|perf|test|chore)(\(.+\))?:\ .+ ]]; then
+            echo "❌ PR title must follow conventional format"
+            echo "Format: type(scope): description"
+            echo "Example: feat(auth): add OTP validation"
+            exit 1
+          fi
+          echo "✓ PR title format valid"
+      
+      - name: Check for large files
+        run: |
+          echo "Checking for large files..."
+          find . -type f -size +10M ! -path "./.git/*" ! -path "./node_modules/*" ! -path "./dist/*" -exec echo "⚠️  Large file: {}" \;
+      
+      - name: Generate PR summary
+        run: |
+          echo "📊 PR Summary"
+          echo "=============="
+          echo "Files changed: $(git diff --name-only origin/main... | wc -l)"
+          echo "Additions: $(git diff --stat origin/main... | tail -1)"
+
+  set-reviewers:
+    name: Auto-assign reviewers
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+    
+    steps:
+      - name: Add reviewer
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              reviewers: ['vismaya2802'] // Add GitHub usernames
+            });
+
+  size-label:
+    name: Label PR by size
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Determine PR size
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            const additions = data.additions;
+            let label = 'size/small';
+            
+            if (additions > 500) label = 'size/large';
+            else if (additions > 100) label = 'size/medium';
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [label]
+            });
