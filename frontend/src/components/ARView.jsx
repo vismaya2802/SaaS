@@ -31,6 +31,7 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
         if (video.videoWidth && video.videoHeight) {
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
+          console.log(`📐 Canvas sized: ${canvas.width}x${canvas.height}`);
         }
       };
       
@@ -42,7 +43,6 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
   useEffect(() => {
     if (isTracking && !ws) {
       const effectiveUserId = userId || 'USER_ANON';
-      // Use environment variable for WebSocket URL
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
       const wsBaseUrl = apiUrl.replace('https://', 'wss://').replace('http://', 'ws://').replace('/api', '');
       const socketUrl = `${wsBaseUrl}/api/telemetry/ws/${effectiveUserId}`;
@@ -105,20 +105,22 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
       <div className="relative w-full max-w-md aspect-[4/3] bg-charcoal-950 rounded-xl overflow-hidden border-2 border-gold-500/30 shadow-lg">
         <video 
           ref={videoRef} 
-          className="absolute inset-0 w-full h-full object-cover transform -scale-x-100" 
+          className="absolute inset-0 w-full h-full object-cover -scale-x-100" 
           playsInline 
           muted 
           autoPlay
+          style={{ zIndex: 1 }}
         />
         <canvas 
           ref={canvasRef}
           width={640}
           height={480}
-          className="absolute inset-0 w-full h-full object-cover transform -scale-x-100" 
+          className="absolute inset-0 w-full h-full object-cover -scale-x-100" 
+          style={{ zIndex: 10, pointerEvents: 'none' }}
         />
         
         {!isTracking && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-charcoal-950/90 to-luxury-950/90 backdrop-blur-sm text-white">
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-charcoal-950/90 to-luxury-950/90 backdrop-blur-sm text-white" style={{ zIndex: 20 }}>
             <div className="text-center">
               <p className="text-lg font-medium">Click "Start AR" to begin</p>
               <p className="text-sm text-gray-400 mt-2">Experience luxury eyewear in AR</p>
@@ -127,7 +129,7 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
         )}
         
         {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-red-600/90 text-white p-4 text-center">
+          <div className="absolute inset-0 flex items-center justify-center bg-red-600/90 text-white p-4 text-center" style={{ zIndex: 30 }}>
             <p>{error}</p>
           </div>
         )}
@@ -184,4 +186,3 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
 };
 
 export default ARView;
-
