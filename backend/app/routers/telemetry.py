@@ -19,6 +19,7 @@ from app.models import (
     ARTelemetry, UserSession, FunnelEvent, HeatmapData,
     ABTestExperiment, ABTestAssignment
 )
+from app.services.powerbi_stream import push_event_to_powerbi, push_batch_to_powerbi
 from app.schemas import (
     TelemetryEventRequest, TelemetryEventResponse,
     SessionCreateRequest, SessionCreateResponse, SessionUpdateRequest,
@@ -149,6 +150,15 @@ def record_telemetry_http(
             session.last_activity_at = datetime.now(timezone.utc)
             db.commit()
 
+    # Stream to PowerBI (async, non-blocking)
+    powerbi_success = push_event_to_powerbi(
+        product_id=body.product_id,
+        event_type=body.event_type,
+        dwell_time_seconds=body.dwell_time_seconds,
+        user_id=body.user_id,
+        session_id=body.session_id,
+    )
+
     manager.record_single_sync(
         user_id=body.user_id,
         product_id=body.product_id,
@@ -160,7 +170,7 @@ def record_telemetry_http(
     return TelemetryEventResponse(
         recorded=True,
         event_id=event.id,
-        streamed_to_powerbi=True,
+        streamed_to_powerbi=powerbi_success,
     )
 
 
@@ -488,4 +498,53 @@ def get_ab_test_results(experiment_name: str, db: Session = Depends(get_db)):
         "experiment_name": experiment.name,
         "is_active": experiment.is_active,
         "variants": results
+    }
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# POWERBI INTEGRATION ENDPOINTS
+# ═════════════════════════════════════════════════════════════════════════════
+
+@router.get("/powerbi/test")
+def test_powerbi_integration():
+    """Test PowerBI connection and authentication"""
+    from app.services.powerbi_stream import test_powerbi_connection
+    return test_powerbi_connection()
+
+
+@router.post("/powerbi/batch-sync")
+def sync_batch_to_powerbi(limit: int = 100, db: Session = Depends(get_db)):
+    """
+    Manually sync recent telemetry events to PowerBI in batch.
+    Useful for backfilling or recovery after PowerBI downtime.
+    """
+    # Get recent events
+    events = db.query(ARTelemetry)\
+        .order_by(ARTelemetry.timestamp.desc())\
+        .limit(limit)\
+        .all()
+    
+    if not events:
+        return {"success": False, "message": "No events to sync"}
+    
+    # Convert to batch format
+    batch = [
+        {
+            "product_id": e.product_id,
+            "event_type": e.event_type,
+            "dwell_time_seconds": e.dwell_time_seconds,
+            "user_id": e.user_id,
+            "session_id": e.session_id,
+            "timestamp": e.timestamp.isoformat(),
+        }
+        for e in events
+    ]
+    
+    # Push batch
+    success = push_batch_to_powerbi(batch)
+    
+    return {
+        "success": success,
+        "events_synced": len(batch) if success else 0,
+        "message": f"Synced {len(batch)} events to PowerBI" if success else "PowerBI sync failed"
     }
