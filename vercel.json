@@ -25,10 +25,5 @@
   ],
   "env": {
     "PYTHONUNBUFFERED": "1"
-  },
-  "build": {
-    "env": {
-      "VITE_API_URL": "https://your-project.vercel.app"
-    }
   }
 }
