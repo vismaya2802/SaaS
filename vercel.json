@@ -1,0 +1,44 @@
+{
+  "version": 3,
+  "env": {
+    "VITE_API_URL": "@vite_api_url",
+    "PYTHONUNBUFFERED": "1"
+  },
+  "services": {
+    "frontend": {
+      "root": "frontend",
+      "framework": "vite",
+      "build": {
+        "command": "npm run build",
+        "outputs": ["dist"]
+      },
+      "env": {
+        "VITE_API_URL": "@vite_api_url"
+      }
+    },
+    "backend": {
+      "root": "backend",
+      "runtime": "python@3.11",
+      "build": {
+        "command": "pip install -r requirements.txt"
+      },
+      "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api(/.*)?",
+      "destination": {
+        "type": "service",
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "type": "service",
+        "service": "frontend"
+      }
+    }
+  ]
+}
