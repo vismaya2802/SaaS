@@ -43,6 +43,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",   # Vite default dev port
         "http://localhost:3000",
+        "https://saasvf.vercel.app",  # Production Vercel URL
+        "https://*.vercel.app",     # All Vercel preview deployments
     ],
     allow_credentials=True,
     allow_methods=["*"],
