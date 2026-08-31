@@ -42,7 +42,10 @@ const ARView = ({ productId, productName, userId, arAssetUrl }) => {
   useEffect(() => {
     if (isTracking && !ws) {
       const effectiveUserId = userId || 'USER_ANON';
-      const socketUrl = `ws://localhost:8000/api/telemetry/ws/${effectiveUserId}`;
+      // Use environment variable for WebSocket URL
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+      const wsBaseUrl = apiUrl.replace('https://', 'wss://').replace('http://', 'ws://').replace('/api', '');
+      const socketUrl = `${wsBaseUrl}/api/telemetry/ws/${effectiveUserId}`;
       const socket = new WebSocket(socketUrl);
 
       socket.onopen = () => console.log('✅ WebSocket connected');
