@@ -1,4 +1,4 @@
-// hooks/useMediaPipe.js — AR glasses overlay with proper cleanup
+// hooks/useMediaPipe.js — AR glasses overlay with improved image loading
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 export function useMediaPipe(options = {}) {
@@ -14,6 +14,7 @@ export function useMediaPipe(options = {}) {
   const [isTracking, setIsTracking] = useState(false);
   const [error, setError] = useState(null);
   const [scale, setScale] = useState(1.0);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const scaleRef = useRef(1.0);
 
   // Wait for MediaPipe to load from CDN
@@ -21,6 +22,7 @@ export function useMediaPipe(options = {}) {
     const checkMediaPipeLoaded = () => {
       if (window.FaceMesh && window.Camera) {
         setIsReady(true);
+        console.log('✅ MediaPipe libraries loaded');
       } else {
         setTimeout(checkMediaPipeLoaded, 100);
       }
@@ -28,55 +30,84 @@ export function useMediaPipe(options = {}) {
     checkMediaPipeLoaded();
   }, []);
 
-  // Create SVG glasses frame as fallback
+  // Create SVG glasses frame as fallback - ALWAYS visible
   const createGlassesFrame = () => {
-    const svg = `<svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="lensGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#6B8FFF;stop-opacity:0.4" /><stop offset="100%" style="stop-color:#4A90E2;stop-opacity:0.6" /></linearGradient></defs><ellipse cx="60" cy="50" rx="40" ry="35" fill="url(#lensGradient)" stroke="#2C3E50" stroke-width="2.5"/><ellipse cx="180" cy="50" rx="40" ry="35" fill="url(#lensGradient)" stroke="#2C3E50" stroke-width="2.5"/><rect x="100" y="42" width="40" height="16" fill="#2C3E50" rx="3"/><path d="M 25 55 Q 15 60 10 75" stroke="#2C3E50" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 215 55 Q 225 60 230 75" stroke="#2C3E50" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="35" rx="12" ry="15" fill="white" opacity="0.3"/><ellipse cx="170" cy="35" rx="12" ry="15" fill="white" opacity="0.3"/></svg>`;
+    const svg = `<svg viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#FFD700;stop-opacity:0.3" />
+          <stop offset="100%" style="stop-color:#FFA500;stop-opacity:0.5" />
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+          <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <!-- Left Lens -->
+      <ellipse cx="75" cy="60" rx="50" ry="40" fill="url(#lensGrad)" stroke="#B8860B" stroke-width="3" filter="url(#glow)"/>
+      <!-- Right Lens -->
+      <ellipse cx="225" cy="60" rx="50" ry="40" fill="url(#lensGrad)" stroke="#B8860B" stroke-width="3" filter="url(#glow)"/>
+      <!-- Bridge -->
+      <rect x="125" y="52" width="50" height="16" fill="#B8860B" rx="4"/>
+      <!-- Left Temple -->
+      <path d="M 25 65 Q 15 70 10 90" stroke="#B8860B" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <!-- Right Temple -->
+      <path d="M 275 65 Q 285 70 290 90" stroke="#B8860B" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <!-- Highlight on left lens -->
+      <ellipse cx="60" cy="45" rx="15" ry="20" fill="white" opacity="0.4"/>
+      <!-- Highlight on right lens -->
+      <ellipse cx="210" cy="45" rx="15" ry="20" fill="white" opacity="0.4"/>
+    </svg>`;
     
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
-        console.log('✅ SVG glasses frame loaded');
+        console.log('✅ SVG glasses frame created');
         resolve(img);
       };
       img.onerror = () => {
-        console.error('Failed to create SVG');
+        console.error('❌ Failed to create SVG glasses');
         resolve(null);
       };
       img.src = 'data:image/svg+xml;base64,' + btoa(svg);
     });
   };
 
-  // Load glasses image
+  // Load glasses image with immediate fallback
   useEffect(() => {
     const loadImage = async () => {
       try {
-        if (options.arAssetUrl) {
-          console.log('📸 Loading AR asset:', options.arAssetUrl);
-          const img = new window.Image();
+        // ALWAYS load SVG fallback first
+        const svgFrame = await createGlassesFrame();
+        frameImageRef.current = svgFrame;
+        setImageLoaded(true);
+        console.log('✅ Default glasses loaded (SVG)');
+        
+        // Then try to load product image if available
+        if (options.arAssetUrl && options.arAssetUrl.startsWith('http')) {
+          console.log('📸 Attempting to load product image:', options.arAssetUrl);
+          const img = new Image();
           img.crossOrigin = 'anonymous';
-          img.src = options.arAssetUrl;
           
           img.onload = () => {
             frameImageRef.current = img;
-            console.log('✅ Product image loaded');
+            setImageLoaded(true);
+            console.log('✅ Product image loaded successfully');
           };
           
-          img.onerror = async () => {
-            console.warn('⚠️ Using SVG fallback');
-            frameImageRef.current = await createGlassesFrame();
+          img.onerror = (err) => {
+            console.warn('⚠️ Product image failed, keeping SVG fallback', err);
+            // Keep SVG fallback that's already loaded
           };
           
-          setTimeout(() => {
-            if (!frameImageRef.current) {
-              createGlassesFrame().then(img => { frameImageRef.current = img; });
-            }
-          }, 3000);
-        } else {
-          frameImageRef.current = await createGlassesFrame();
+          img.src = options.arAssetUrl;
         }
       } catch (err) {
-        console.error('Error loading image:', err);
-        frameImageRef.current = await createGlassesFrame();
+        console.error('Error in image loading:', err);
+        // Ensure we always have something
+        const svgFrame = await createGlassesFrame();
+        frameImageRef.current = svgFrame;
+        setImageLoaded(true);
       }
     };
     
@@ -96,6 +127,7 @@ export function useMediaPipe(options = {}) {
     if (!canvas || !isTracking) return;
     
     const ctx = canvas.getContext('2d');
+    ctx.save();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (results.multiFaceLandmarks?.length > 0) {
@@ -114,43 +146,61 @@ export function useMediaPipe(options = {}) {
       const ipd = Math.hypot(rx - lx, ry - ly);
       const angle = Math.atan2(ry - ly, rx - lx);
 
-      if (frameImageRef.current?.complete) {
+      // Draw glasses if image is loaded
+      if (frameImageRef.current && imageLoaded) {
         const img = frameImageRef.current;
         const currentScale = scaleRef.current || 1.0;
-        const frameWidth = ipd * 2.2 * currentScale;
-        const frameHeight = frameWidth * (img.height / (img.width || 1));
+        const frameWidth = ipd * 2.5 * currentScale;
+        const frameHeight = frameWidth * 0.4; // Fixed aspect ratio for glasses
 
-        ctx.save();
-        ctx.translate(nx, ny);
+        ctx.translate(nx, ny - ipd * 0.1); // Slightly above nose
         ctx.rotate(angle);
-        ctx.globalAlpha = 0.9;
-        ctx.drawImage(img, -frameWidth / 2, -frameHeight / 2, frameWidth, frameHeight);
+        ctx.globalAlpha = 0.95;
+        
+        // Draw with better positioning
+        ctx.drawImage(
+          img, 
+          -frameWidth / 2, 
+          -frameHeight / 2, 
+          frameWidth, 
+          frameHeight
+        );
+        
         ctx.restore();
+        
+        // Draw face detected indicator
+        ctx.fillStyle = '#00FF64';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('✓ Face Detected', canvas.width / 2, 30);
       } else {
-        // Face detected placeholder
-        ctx.fillStyle = 'rgba(0, 255, 100, 0.2)';
+        ctx.restore();
+        // Loading state
+        ctx.fillStyle = 'rgba(0, 255, 100, 0.1)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = '#00FF64';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         ctx.strokeRect(nx - 120, ny - 60, 240, 120);
         ctx.fillStyle = '#00FF64';
         ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'center';
         ctx.fillText('Face Detected ✓', nx, ny - 20);
-        ctx.font = '12px Arial';
+        ctx.font = '14px Arial';
         ctx.fillText('Loading glasses...', nx, ny + 10);
       }
     } else {
-      ctx.fillStyle = 'rgba(255, 100, 100, 0.1)';
+      ctx.restore();
+      // No face detected
+      ctx.fillStyle = 'rgba(255, 100, 100, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#FF6464';
-      ctx.font = 'bold 20px Arial';
+      ctx.font = 'bold 18px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('No Face Detected', canvas.width / 2, canvas.height / 2);
+      ctx.fillText('⚠ No Face Detected', canvas.width / 2, canvas.height / 2);
       ctx.font = '14px Arial';
       ctx.fillText('Please face the camera', canvas.width / 2, canvas.height / 2 + 30);
     }
-  }, [isTracking]);
+  }, [isTracking, imageLoaded]);
 
   const startAR = useCallback(async () => {
     setError(null);
@@ -159,9 +209,14 @@ export function useMediaPipe(options = {}) {
       return;
     }
 
+    if (!imageLoaded || !frameImageRef.current) {
+      setError('Glasses image still loading...');
+      return;
+    }
+
     try {
       if (!videoRef.current || !canvasRef.current) {
-        throw new Error('Video or Canvas not found');
+        throw new Error('Video or Canvas not ready');
       }
 
       faceMeshRef.current = new window.FaceMesh({
@@ -189,89 +244,59 @@ export function useMediaPipe(options = {}) {
 
       await cameraRef.current.start();
       
-      // Store stream reference
       if (videoRef.current && videoRef.current.srcObject) {
         streamRef.current = videoRef.current.srcObject;
       }
       
       setIsTracking(true);
-      console.log('🎥 AR started');
+      console.log('🎥 AR tracking started');
     } catch (err) {
       console.error('Failed to start AR:', err);
       setError(err.message || 'Unable to start AR');
       setIsTracking(false);
     }
-  }, [onResults, isTracking]);
+  }, [onResults, isTracking, imageLoaded]);
 
-  // ✅ FIX: Safe stop with proper cleanup order
   const stopAR = useCallback(() => {
     console.log('🛑 Stopping AR...');
-    
-    // 1. Immediately stop tracking to prevent new frames
     setIsTracking(false);
     
-    // 2. Cancel any pending animation frames
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
     
-    // 3. Stop MediaPipe camera (this triggers the binding error, so wrap it)
     if (cameraRef.current) {
-      try {
-        cameraRef.current.stop();
-      } catch (e) {
-        // Silently ignore MediaPipe WASM cleanup errors
-      }
+      try { cameraRef.current.stop(); } catch (e) {}
       cameraRef.current = null;
     }
     
-    // 4. Close MediaPipe FaceMesh
     if (faceMeshRef.current) {
-      try {
-        faceMeshRef.current.close();
-      } catch (e) {
-        // Silently ignore cleanup errors
-      }
+      try { faceMeshRef.current.close(); } catch (e) {}
       faceMeshRef.current = null;
     }
     
-    // 5. Stop camera tracks manually as fallback
     if (streamRef.current) {
       try {
         streamRef.current.getTracks().forEach(track => {
-          try {
-            track.stop();
-          } catch (e) {
-            // Ignore
-          }
+          try { track.stop(); } catch (e) {}
         });
-      } catch (e) {
-        // Ignore
-      }
+      } catch (e) {}
       streamRef.current = null;
     }
     
-    // 6. Clear video source
     if (videoRef.current) {
-      try {
-        videoRef.current.srcObject = null;
-      } catch (e) {
-        // Ignore
-      }
+      try { videoRef.current.srcObject = null; } catch (e) {}
     }
     
-    // 7. Clear canvas
     if (canvasRef.current) {
       try {
         const ctx = canvasRef.current.getContext('2d');
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      } catch (e) {
-        // Ignore
-      }
+      } catch (e) {}
     }
     
-    console.log('✅ AR stopped cleanly');
+    console.log('✅ AR stopped');
   }, []);
 
   useEffect(() => {
@@ -281,7 +306,7 @@ export function useMediaPipe(options = {}) {
   return {
     videoRef,
     canvasRef,
-    isReady,
+    isReady: isReady && imageLoaded,
     isTracking,
     error,
     startAR,
